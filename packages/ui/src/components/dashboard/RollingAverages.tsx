@@ -1,14 +1,13 @@
 'use client'
 
 import type { InsightsResponse } from '@/lib/types'
-import { formatStroops, timeAgo, cn } from '@/lib/utils'
+import { formatStroops, cn } from '@/lib/utils'
 
 interface Props {
   insights: InsightsResponse | null
-  tick:     number
 }
 
-export function RollingAverages({ insights, tick }: Props) {
+export function RollingAverages({ insights }: Props) {
   if (!insights) {
     return (
       <div className="card p-5 flex items-center justify-center text-text-muted text-sm font-mono h-48">

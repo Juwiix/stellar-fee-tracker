@@ -56,9 +56,10 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${resolveApiBase()}${path}`, {
+async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
     next: { revalidate: 0 }, // always fresh
+    signal,
   })
   if (!res.ok) {
     throw new Error(`API error ${res.status} on ${path}`)
@@ -77,11 +78,10 @@ async function getText(path: string): Promise<string> {
 }
 
 export const api = {
-  currentFees:  ()               => get<CurrentFeeResponse>('/fees/current'),
-  feeHistory:   (window = '1h')  => get<FeeHistoryResponse>(`/fees/history?window=${window}`),
-  feeTrend:     ()               => get<FeeTrendResponse>('/fees/trend'),
-  insights:     ()               => get<InsightsResponse>('/insights'),
-  // /health returns the plain-text body "ok", not JSON.
-  health:       async ()         => (await getText('/health')).trim() === 'ok',
+  currentFees:  (signal?: AbortSignal)               => get<CurrentFeeResponse>('/fees/current', signal),
+  feeHistory:   (window = '1h', signal?: AbortSignal) => get<FeeHistoryResponse>(`/fees/history?window=${window}`, signal),
+  feeTrend:     (signal?: AbortSignal)               => get<FeeTrendResponse>('/fees/trend', signal),
+  insights:     (signal?: AbortSignal)               => get<InsightsResponse>('/insights', signal),
+  health:       ()               => get<HealthResponse>('/health'),
   recommend:    (body: RecommendRequest) => post<RecommendResponse>('/fees/recommend', body),
 }

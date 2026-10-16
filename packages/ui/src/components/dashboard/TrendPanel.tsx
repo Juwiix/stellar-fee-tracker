@@ -6,10 +6,9 @@ import { pctColor, pctArrow, congestionColor, cn } from '@/lib/utils'
 
 interface Props {
   trend: FeeTrendResponse | null
-  tick:  number
 }
 
-export function TrendPanel({ trend, tick }: Props) {
+export function TrendPanel({ trend }: Props) {
   if (!trend) {
     return (
       <div className="card p-5 flex items-center justify-center text-text-muted text-sm font-mono h-48">

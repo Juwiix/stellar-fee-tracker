@@ -2,12 +2,11 @@
 
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Layers, BarChart2 } from 'lucide-react'
 import type { CurrentFeeResponse, FeeTrendResponse } from '@/lib/types'
-import { formatStroops, congestionColor, congestionBg, cn } from '@/lib/utils'
+import { formatStroops, congestionBg, cn } from '@/lib/utils'
 
 interface Props {
   current: CurrentFeeResponse | null
   trend:   FeeTrendResponse   | null
-  tick:    number
 }
 
 function StatCard({
@@ -47,7 +46,7 @@ function StatCard({
   )
 }
 
-export function StatCards({ current, trend, tick }: Props) {
+export function StatCards({ current, trend }: Props) {
   const baseFee    = current ? formatStroops(current.base_fee)  : '—'
   const avgFee     = current ? formatStroops(current.avg_fee)   : '—'
   const status     = trend?.status ?? 'Normal'

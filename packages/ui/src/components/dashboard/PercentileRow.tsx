@@ -5,7 +5,6 @@ import { formatStroops } from '@/lib/utils'
 
 interface Props {
   percentiles: PercentileFees
-  tick: number
 }
 
 const LABELS: { key: keyof PercentileFees; label: string; color: string }[] = [
@@ -22,7 +21,7 @@ const LABELS: { key: keyof PercentileFees; label: string; color: string }[] = [
   { key: 'p99', label: 'P99', color: 'text-accent-red    border-accent-red/70'   },
 ]
 
-export function PercentileRow({ percentiles, tick }: Props) {
+export function PercentileRow({ percentiles }: Props) {
   return (
     <div className="card p-4">
       <div className="text-xs font-mono text-text-muted tracking-widest uppercase mb-4">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '@/lib/api'
 import type {
   CurrentFeeResponse,
@@ -35,41 +35,57 @@ export function DashboardShell({ initialData }: Props) {
   const [window,      setWindow]      = useState<'1h' | '6h' | '24h'>('1h')
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [tick,        setTick]        = useState(0)
+  // The chart window lives in a ref as well as state so `refresh` can read the
+  // current value without depending on it. That keeps `refresh` stable, so the
+  // polling interval below is created once instead of after every response.
+  const windowRef = useRef<'1h' | '6h' | '24h'>('1h')
+  const controllerRef = useRef<AbortController | null>(null)
 
-  const refresh = useCallback(async (win = window) => {
+  const refresh = useCallback(async (win?: '1h' | '6h' | '24h') => {
+    // Cancel any request still in flight: a newer refresh (including one for a
+    // different window) supersedes it, so responses cannot overlap or land out of order.
+    controllerRef.current?.abort()
+    const controller = new AbortController()
+    controllerRef.current = controller
+    const { signal } = controller
+
     setIsRefreshing(true)
-    try {
-      const [current, history, trend, insights] = await Promise.allSettled([
-        api.currentFees(),
-        api.feeHistory(win),
-        api.feeTrend(),
-        api.insights(),
-      ])
-      setData({
-        current:  current.status  === 'fulfilled' ? current.value  : data.current,
-        history:  history.status  === 'fulfilled' ? history.value  : data.history,
-        trend:    trend.status    === 'fulfilled' ? trend.value    : data.trend,
-        insights: insights.status === 'fulfilled' ? insights.value : data.insights,
-        error:    null,
-      })
-      setLastUpdated(new Date())
-      setTick(t => t + 1)
-    } catch {
-      // keep stale data
-    } finally {
-      setIsRefreshing(false)
-    }
-  }, [window, data])
+    const [current, history, trend, insights] = await Promise.allSettled([
+      api.currentFees(signal),
+      api.feeHistory(win ?? windowRef.current, signal),
+      api.feeTrend(signal),
+      api.insights(signal),
+    ])
 
-  // Auto-poll every 10s
+    // Superseded by a newer refresh, or the component unmounted: ignore the result.
+    if (signal.aborted) return
+
+    // Functional update, so the stale-data fallback uses the latest state rather
+    // than a captured copy (which would force `refresh` to depend on `data`).
+    setData(prev => ({
+      current:  current.status  === 'fulfilled' ? current.value  : prev.current,
+      history:  history.status  === 'fulfilled' ? history.value  : prev.history,
+      trend:    trend.status    === 'fulfilled' ? trend.value    : prev.trend,
+      insights: insights.status === 'fulfilled' ? insights.value : prev.insights,
+      error:    null,
+    }))
+    setLastUpdated(new Date())
+    setIsRefreshing(false)
+  }, [])
+
+  // Auto-poll every 10s. `refresh` is stable, so this runs once; on unmount the
+  // interval is cleared and any request still in flight is aborted.
   useEffect(() => {
     const id = setInterval(() => refresh(), POLL_MS)
-    return () => clearInterval(id)
+    return () => {
+      clearInterval(id)
+      controllerRef.current?.abort()
+    }
   }, [refresh])
 
   // Re-fetch history when window changes
   const handleWindowChange = async (w: '1h' | '6h' | '24h') => {
+    windowRef.current = w
     setWindow(w)
     refresh(w)
   }
@@ -142,12 +158,11 @@ export function DashboardShell({ initialData }: Props) {
         <StatCards
           current={current}
           trend={trend}
-          tick={tick}
         />
 
         {/* Row 2 — Percentile strip */}
         {current && (
-          <PercentileRow percentiles={current.percentiles} tick={tick} />
+          <PercentileRow percentiles={current.percentiles} />
         )}
 
         {/* Row 3 — Recommendation Panel */}
@@ -162,8 +177,8 @@ export function DashboardShell({ initialData }: Props) {
 
         {/* Row 5 — Trend + Averages */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TrendPanel trend={trend} tick={tick} />
-          <RollingAverages insights={insights} tick={tick} />
+          <TrendPanel trend={trend} />
+          <RollingAverages insights={insights} />
         </div>
 
         {/* Footer */}

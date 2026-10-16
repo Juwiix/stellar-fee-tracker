@@ -57,7 +57,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${resolveApiBase()}${path}`, {
     next: { revalidate: 0 }, // always fresh
     signal,
   })
@@ -67,21 +67,10 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function getText(path: string): Promise<string> {
-  const res = await fetch(`${BASE}${path}`, {
-    next: { revalidate: 0 }, // always fresh
-  })
-  if (!res.ok) {
-    throw new Error(`API error ${res.status} on ${path}`)
-  }
-  return res.text()
-}
-
 export const api = {
   currentFees:  (signal?: AbortSignal)               => get<CurrentFeeResponse>('/fees/current', signal),
   feeHistory:   (window = '1h', signal?: AbortSignal) => get<FeeHistoryResponse>(`/fees/history?window=${window}`, signal),
   feeTrend:     (signal?: AbortSignal)               => get<FeeTrendResponse>('/fees/trend', signal),
   insights:     (signal?: AbortSignal)               => get<InsightsResponse>('/insights', signal),
-  health:       ()               => get<HealthResponse>('/health'),
   recommend:    (body: RecommendRequest) => post<RecommendResponse>('/fees/recommend', body),
 }

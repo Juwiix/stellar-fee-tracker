@@ -1,24 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Stellar Fee Tracker — UI
 
-## Getting Started
+Next.js (App Router) dashboard for the Stellar Fee Tracker. It shows the current
+base/average fee, fee history and congestion trend for the Stellar testnet, and
+asks the backend for a recommended fee. It talks to the Rust backend in
+[`packages/core`](../core) — it has no data of its own.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20 or newer, and npm
+- The backend API reachable. Either run it locally (see the
+  [root README](../../README.md)) or use `docker compose up` from the repo root.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci                       # install exactly what package-lock.json pins
+cp .env.example .env.local   # change the URLs if the backend is not on :8080
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The landing page is at `/` and the dashboard at `/dashboard`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | What it does |
+|--------|--------------|
+| `npm run dev` | Development server with hot reload (Turbopack) |
+| `npm run build` | Production build (`next build --turbopack`) |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint over the project, failing on any warning |
+| `npm run typecheck` | `tsc --noEmit` — the only type verification there is |
+
+## Talking to the backend
+
+The dashboard's server component renders `/fees/current`, `/fees/history`,
+`/fees/trend` and `/insights` once, then the browser re-polls all four every 10
+seconds and on demand via the Refresh button. `/fees/recommend` is a POST issued
+from the recommendation panel.
+
+With the recommended `NEXT_PUBLIC_API_URL=/api`, requests go to the same origin
+and are proxied to the backend by the rewrite in `next.config.ts`. If you point
+`NEXT_PUBLIC_API_URL` at an absolute URL instead, the browser calls the backend
+directly and the backend's `ALLOWED_ORIGINS` must include this origin.
 
 ## Environment variables
 
@@ -51,17 +74,9 @@ Typical setups:
 `NEXT_PUBLIC_STELLAR_NETWORK` also appears in `docker-compose.yml` and `render.yaml`, but the
 UI code does not read it yet.
 
-## Learn More
+## Docker
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`docker compose up frontend` from the repo root builds this package from
+`Dockerfile.dev` and mounts the source for hot reload. That image is
+**development only** — it runs the dev server, not a production build. For
+production, run `npm run build && npm run start` in an image you build yourself.

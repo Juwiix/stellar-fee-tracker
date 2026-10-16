@@ -10,7 +10,7 @@ pub struct PercentileTable {
     pub p99: f64,
 }
 
-fn percentile(sorted: &[f64], pct: f64) -> f64 {
+pub fn percentile(sorted: &[f64], pct: f64) -> f64 {
     if sorted.is_empty() {
         return 0.0;
     }
@@ -28,7 +28,7 @@ fn percentile(sorted: &[f64], pct: f64) -> f64 {
 impl PercentileTable {
     pub fn compute(values: &[f64]) -> Self {
         let mut sorted = values.to_vec();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(f64::total_cmp);
         Self {
             p10: percentile(&sorted, 10.0),
             p50: percentile(&sorted, 50.0),

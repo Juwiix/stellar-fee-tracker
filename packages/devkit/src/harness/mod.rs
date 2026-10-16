@@ -5,7 +5,10 @@ use crate::harness::scenarios::{scenario_source, ScenarioFixture, SCENARIO_NAMES
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HarnessError {
     UnknownScenario { requested: String },
-    MalformedScenario { scenario: &'static str },
+    MalformedScenario {
+        scenario: &'static str,
+        message: String,
+    },
 }
 
 impl std::fmt::Display for HarnessError {
@@ -14,8 +17,8 @@ impl std::fmt::Display for HarnessError {
             Self::UnknownScenario { requested } => {
                 write!(formatter, "unknown scenario: {requested}")
             }
-            Self::MalformedScenario { scenario } => {
-                write!(formatter, "scenario {scenario} could not be parsed")
+            Self::MalformedScenario { scenario, message } => {
+                write!(formatter, "scenario {scenario} could not be parsed: {message}")
             }
         }
     }
@@ -23,23 +26,20 @@ impl std::fmt::Display for HarnessError {
 
 impl std::error::Error for HarnessError {}
 
-pub fn load_scenario(name: &str) -> Result<ScenarioFixture, HarnessError> {
+pub fn load_scenario(name: &'static str) -> Result<ScenarioFixture, HarnessError> {
     let source = scenario_source(name).ok_or_else(|| HarnessError::UnknownScenario {
         requested: name.to_string(),
     })?;
-    serde_json::from_str(source).map_err(|_| HarnessError::MalformedScenario {
-        scenario: SCENARIO_NAMES
-            .iter()
-            .find(|candidate| scenario_source(candidate) == Some(source))
-            .copied()
-            .unwrap_or("unknown"),
+    serde_json::from_str(source).map_err(|err| HarnessError::MalformedScenario {
+        scenario: name,
+        message: err.to_string(),
     })
 }
 
-pub fn load_all() -> Vec<ScenarioFixture> {
+pub fn load_all() -> Result<Vec<ScenarioFixture>, HarnessError> {
     SCENARIO_NAMES
         .iter()
-        .filter_map(|name| load_scenario(name).ok())
+        .map(|&name| load_scenario(name))
         .collect()
 }
 
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn every_scenario_loads() {
-        assert_eq!(load_all().len(), SCENARIO_NAMES.len());
+        assert_eq!(load_all().expect("all scenarios load").len(), SCENARIO_NAMES.len());
     }
 
     #[test]
@@ -88,8 +88,12 @@ mod tests {
             "unknown scenario: meltdown"
         );
         assert_eq!(
-            HarnessError::MalformedScenario { scenario: "spike" }.to_string(),
-            "scenario spike could not be parsed"
+            HarnessError::MalformedScenario {
+                scenario: "spike",
+                message: "EOF while parsing".to_string(),
+            }
+            .to_string(),
+            "scenario spike could not be parsed: EOF while parsing"
         );
     }
 }

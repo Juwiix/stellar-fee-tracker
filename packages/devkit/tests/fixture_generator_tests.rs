@@ -120,7 +120,7 @@ fn generated_series_satisfy_the_loader_invariants() {
 
 #[test]
 fn the_shipped_fixtures_all_load_and_describe_themselves() {
-    assert_eq!(load_all().len(), scenario_names().len());
+    assert_eq!(load_all().expect("fixtures load").len(), scenario_names().len());
     for name in scenario_names() {
         let scenario = load_scenario(name).expect("fixture loads");
         assert_eq!(&scenario.name, name);

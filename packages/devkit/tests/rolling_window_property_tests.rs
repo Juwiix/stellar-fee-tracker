@@ -20,6 +20,9 @@ impl RollingWindow {
     }
 
     fn push(&mut self, value: f64) {
+        if self.capacity == 0 {
+            return;
+        }
         if self.values.len() == self.capacity {
             self.values.pop_front();
         }
@@ -34,7 +37,7 @@ impl RollingWindow {
 proptest! {
     #[test]
     fn never_exceeds_capacity(
-        capacity in 1usize..100,
+        capacity in 0usize..100,
         pushes in prop::collection::vec(any::<f64>().prop_filter("finite", |v| v.is_finite()), 0..500),
     ) {
         let mut window = RollingWindow::new(capacity);

@@ -6,10 +6,12 @@ import { cn } from '@/lib/utils'
 interface Props {
   lastUpdated:  Date
   isRefreshing: boolean
+  /** Health of the most recent fetch: false means the last poll failed. */
+  isLive?:      boolean
   onRefresh:    () => void
 }
 
-export function TopBar({ lastUpdated, isRefreshing, onRefresh }: Props) {
+export function TopBar({ lastUpdated, isRefreshing, isLive = true, onRefresh }: Props) {
   const timeStr = lastUpdated.toLocaleTimeString([], {
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
@@ -32,10 +34,22 @@ export function TopBar({ lastUpdated, isRefreshing, onRefresh }: Props) {
           </span>
         </div>
 
-        {/* Center — live indicator */}
-        <div className="hidden md:flex items-center gap-2 text-xs text-text-secondary font-mono">
-          <Activity size={12} className="text-accent-green" />
-          <span>LIVE</span>
+        {/* Center — live indicator. Visible at every breakpoint: mobile users
+            need the last-updated time too. role=status announces it politely
+            when a poll lands. */}
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-text-secondary font-mono"
+        >
+          <Activity
+            size={12}
+            aria-hidden="true"
+            className={isLive ? 'text-accent-green' : 'text-accent-red'}
+          />
+          <span className={isLive ? 'text-accent-green' : 'text-accent-red'}>
+            {isLive ? 'LIVE' : 'OFFLINE'}
+          </span>
           <span className="text-text-muted">·</span>
           <span suppressHydrationWarning>UPDATED {timeStr}</span>
         </div>

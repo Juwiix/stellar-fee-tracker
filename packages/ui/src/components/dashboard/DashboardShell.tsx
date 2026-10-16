@@ -28,6 +28,8 @@ interface Props {
   initialData: DashboardData
 }
 
+type RequestKey = 'current' | 'history' | 'trend' | 'insights'
+
 const POLL_MS = 10_000
 
 export function DashboardShell({ initialData }: Props) {
@@ -35,6 +37,9 @@ export function DashboardShell({ initialData }: Props) {
   const [window,      setWindow]      = useState<'1h' | '6h' | '24h'>('1h')
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState(false)
+  // Which endpoints failed on the most recent poll. A null slice with
+  // `failed[key]` set is an error to report, not a request still in flight.
+  const [failed, setFailed] = useState<Partial<Record<RequestKey, boolean>>>({})
   // The chart window lives in a ref as well as state so `refresh` can read the
   // current value without depending on it. That keeps `refresh` stable, so the
   // polling interval below is created once instead of after every response.
@@ -69,6 +74,12 @@ export function DashboardShell({ initialData }: Props) {
       insights: insights.status === 'fulfilled' ? insights.value : prev.insights,
       error:    null,
     }))
+    setFailed({
+      current:  current.status  === 'rejected',
+      history:  history.status  === 'rejected',
+      trend:    trend.status    === 'rejected',
+      insights: insights.status === 'rejected',
+    })
     setLastUpdated(new Date())
     setIsRefreshing(false)
   }, [])
@@ -91,6 +102,9 @@ export function DashboardShell({ initialData }: Props) {
   }
 
   const { current, history, trend, insights } = data
+
+  // Fetch health for the TopBar: the last poll reached every endpoint.
+  const isLive = !Object.values(failed).some(Boolean)
 
   const hasLoaded = current !== null || history !== null || trend !== null || insights !== null
   const isLoading = !hasLoaded && !data.error
@@ -125,7 +139,12 @@ export function DashboardShell({ initialData }: Props) {
   if (data.error) {
     return (
       <div className="min-h-screen bg-bg-base grid-bg">
-        <TopBar lastUpdated={lastUpdated} isRefreshing={false} onRefresh={() => refresh()} />
+        <TopBar
+          lastUpdated={lastUpdated}
+          isRefreshing={false}
+          isLive={false}
+          onRefresh={() => refresh()}
+        />
         <main className="max-w-[1400px] mx-auto px-4 py-6">
           <div className="card p-8 text-center">
             <div className="text-accent-red text-lg font-display font-bold mb-2">
@@ -149,6 +168,7 @@ export function DashboardShell({ initialData }: Props) {
       <TopBar
         lastUpdated={lastUpdated}
         isRefreshing={isRefreshing}
+        isLive={isLive}
         onRefresh={() => refresh()}
       />
 
@@ -173,12 +193,22 @@ export function DashboardShell({ initialData }: Props) {
           history={history}
           window={window}
           onWindowChange={handleWindowChange}
+          unavailable={failed.history ?? false}
+          onRetry={() => refresh()}
         />
 
         {/* Row 5 — Trend + Averages */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TrendPanel trend={trend} />
-          <RollingAverages insights={insights} />
+          <TrendPanel
+            trend={trend}
+            unavailable={failed.trend ?? false}
+            onRetry={() => refresh()}
+          />
+          <RollingAverages
+            insights={insights}
+            unavailable={failed.insights ?? false}
+            onRetry={() => refresh()}
+          />
         </div>
 
         {/* Footer */}

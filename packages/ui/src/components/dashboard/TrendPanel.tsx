@@ -6,13 +6,26 @@ import { pctColor, pctArrow, congestionColor, cn } from '@/lib/utils'
 
 interface Props {
   trend: FeeTrendResponse | null
+  /** The most recent /fees/trend request failed — never render 'Loading' for it. */
+  unavailable?: boolean
+  onRetry?: () => void
 }
 
-export function TrendPanel({ trend }: Props) {
+export function TrendPanel({ trend, unavailable = false, onRetry }: Props) {
   if (!trend) {
     return (
-      <div className="card p-5 flex items-center justify-center text-text-muted text-sm font-mono h-48">
-        Loading trend data...
+      <div className="card p-5 flex flex-col items-center justify-center gap-3 text-text-muted text-sm font-mono h-48">
+        <span>
+          {unavailable ? 'Trend data unavailable' : 'Loading trend data...'}
+        </span>
+        {unavailable && onRetry && (
+          <button
+            onClick={onRetry}
+            className="px-3 py-1.5 rounded bg-accent-green/10 border border-accent-green/30 text-accent-green text-xs font-mono hover:bg-accent-green/20 transition-colors"
+          >
+            Retry
+          </button>
+        )}
       </div>
     )
   }

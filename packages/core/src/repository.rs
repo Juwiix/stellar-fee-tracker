@@ -118,7 +118,7 @@ impl FeeRepository {
             let ledger_sequence = point.ledger_sequence as i64;
 
             sqlx::query(
-                "INSERT INTO fee_data_points
+                "INSERT OR IGNORE INTO fee_data_points
                  (fee_amount, timestamp, transaction_hash, ledger_sequence)
                  VALUES (?, ?, ?, ?)",
             )

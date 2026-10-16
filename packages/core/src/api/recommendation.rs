@@ -29,7 +29,9 @@ pub struct FeeRecommendResponse {
     pub recommended_fee: u64,
     pub congestion: String,
     pub basis: String,
-    pub base_fee: u64,
+    /// Lowest fee among the most recent 100 observed transactions (not the
+    /// network base fee).
+    pub min_fee: u64,
     pub avg_fee: u64,
     pub timestamp: String,
 }
@@ -41,11 +43,15 @@ pub async fn recommend(
     validate_recommend_request(&body)
         .map_err(|(status, err_json)| (status, Json(err_json)).into_response())?;
 
-    let result = state
-        .engine
-        .recommend(&body)
-        .await
-        .map_err(IntoResponse::into_response)?;
+    let result = match state.engine.recommend(&body).await {
+        Ok(result) => result,
+        Err(err) => {
+            if let Some(metrics) = &state.metrics {
+                metrics.recommendation_errors_total.inc();
+            }
+            return Err(err.into_response());
+        }
+    };
 
     if let Some(metrics) = &state.metrics {
         metrics.recommendations_total.inc();
@@ -63,7 +69,12 @@ pub async fn get_recommend(
         max_fee: None,
     };
 
-    let result = state.engine.recommend(&request).await?;
+    if let Err(err) = state.engine.recommend(&request).await {
+        if let Some(metrics) = &state.metrics {
+            metrics.recommendation_errors_total.inc();
+        }
+        return Err(err);
+    }
     let recent = state.engine.get_last_n_fees(100).await;
 
     if recent.is_empty() {
@@ -75,11 +86,12 @@ pub async fn get_recommend(
     let mut sorted: Vec<u64> = recent.iter().map(|p| p.fee_amount).collect();
     sorted.sort_unstable();
 
-    let base_fee = sorted[0];
+    let min_fee = sorted[0];
     let sum: u64 = sorted.iter().sum();
     let avg_fee = sum / sorted.len() as u64;
 
-    let ratio = avg_fee as f64 / base_fee as f64;
+    // Guard against a zero minimum so the ratio never divides by zero.
+    let ratio = avg_fee as f64 / min_fee.max(1) as f64;
 
     let percentile_value = |sorted: &[u64], pct: usize| -> u64 {
         let idx = (pct * sorted.len()).div_ceil(100).min(sorted.len() - 1);
@@ -106,13 +118,11 @@ pub async fn get_recommend(
         )
     };
 
-    let _network_condition = result.network_condition.clone();
-
     Ok(Json(FeeRecommendResponse {
         recommended_fee,
         congestion,
         basis,
-        base_fee,
+        min_fee,
         avg_fee,
         timestamp: Utc::now().to_rfc3339(),
     }))

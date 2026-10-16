@@ -13,6 +13,8 @@ impl HorizonClient {
     pub fn new(base_url: String) -> Self {
         let http = Client::builder()
             .no_proxy()
+            .connect_timeout(std::time::Duration::from_secs(5))
+            .timeout(std::time::Duration::from_secs(10))
             .build()
             .unwrap_or_else(|_| Client::new());
         Self { base_url, http }

@@ -29,7 +29,6 @@ pub struct AppMetrics {
     /// Total number of fee recommendation requests.
     pub recommendations_total: Counter,
     /// Total number of failed fee recommendation requests.
-    #[allow(dead_code)]
     pub recommendation_errors_total: Counter,
     /// The registry that owns all of the above metrics.
     pub registry: Registry,

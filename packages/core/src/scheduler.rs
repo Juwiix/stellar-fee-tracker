@@ -117,6 +117,25 @@ async fn poll_once(
         return;
     }
 
+    // Each tick fetches the latest transactions, so consecutive polls overlap.
+    // Drop hashes we have already stored so averages are not skewed by repeats.
+    let points: Vec<FeeDataPoint> = {
+        let store = history_store.read().await;
+        let mut seen = std::collections::HashSet::new();
+        points
+            .into_iter()
+            .filter(|p| {
+                store.get_by_hash(&p.transaction_hash).is_none()
+                    && seen.insert(p.transaction_hash.clone())
+            })
+            .collect()
+    };
+
+    if points.is_empty() {
+        tracing::debug!("All fetched fee points were already stored; nothing new this tick");
+        return;
+    }
+
     // Push into in-memory store
     {
         let mut store = history_store.write().await;
@@ -479,7 +498,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn two_poll_cycles_accumulate_data_in_store() {
+    async fn two_poll_cycles_dedupe_repeated_points_in_store() {
         let points = vec![make_point(100), make_point(200)];
         let provider: Arc<dyn FeeDataProvider + Send + Sync> =
             Arc::new(MockHorizonClient::new().with_fees(points));
@@ -489,7 +508,7 @@ mod tests {
         poll_once(&provider, &store, &engine, 3, 0, None, 7, None, None).await;
         poll_once(&provider, &store, &engine, 3, 0, None, 7, None, None).await;
 
-        assert_eq!(store.read().await.len(), 4);
+        assert_eq!(store.read().await.len(), 2);
     }
 
     #[tokio::test]

@@ -1,5 +1,9 @@
 name: Devkit Benchmarks
 
+# Least privilege: every job in this workflow only reads the repository.
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches: [main]

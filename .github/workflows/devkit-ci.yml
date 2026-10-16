@@ -1,9 +1,9 @@
 name: Devkit CI
 
-# Only the devkit crate and the workspace manifests it builds from should
-# trigger this workflow: previously it ran `--workspace` on every push/PR,
-# re-testing core (already covered by ci.yml) and building the whole workspace
-# on three operating systems.
+# Least privilege: every job in this workflow only reads the repository.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ main ]

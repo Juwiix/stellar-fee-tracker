@@ -5,10 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Explicit locale: the server and the browser must format identically or the
+// hydrated markup will not match the server-rendered text.
+const LOCALE = 'en-US'
+
 export function formatStroops(stroops: number | string): string {
   const n = typeof stroops === 'string' ? parseFloat(stroops) : stroops
+  // A non-numeric string parses to NaN; render an em dash rather than 'NaN str'.
+  if (!Number.isFinite(n)) return '—'
   if (n >= 10_000_000) return `${(n / 10_000_000).toFixed(2)} XLM`
-  if (n >= 1_000) return `${n.toLocaleString()} str`
+  if (n >= 1_000) return `${n.toLocaleString(LOCALE)} str`
   return `${n} str`
 }
 

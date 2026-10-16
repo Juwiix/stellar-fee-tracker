@@ -1,5 +1,9 @@
 name: CI
 
+# Least privilege: every job in this workflow only reads the repository.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]

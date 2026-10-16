@@ -1,10 +1,24 @@
 name: Devkit CI
 
+# Only the devkit crate and the workspace manifests it builds from should
+# trigger this workflow: previously it ran `--workspace` on every push/PR,
+# re-testing core (already covered by ci.yml) and building the whole workspace
+# on three operating systems.
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'packages/devkit/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/devkit-ci.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'packages/devkit/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/devkit-ci.yml'
 
 jobs:
   build:
@@ -18,6 +32,6 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Run Cargo Check
-        run: cargo check --workspace
+        run: cargo check -p stellar-devkit
       - name: Run Cargo Test
-        run: cargo test --workspace
+        run: cargo test -p stellar-devkit

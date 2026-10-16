@@ -11,7 +11,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import type { FeeHistoryResponse, FeeDataPoint } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatStroops } from "@/lib/utils";
 
 interface Props {
   history: FeeHistoryResponse | null;
@@ -49,7 +49,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     <div className="card px-3 py-2 text-xs font-mono border-accent-green/30">
       <div className="text-text-muted mb-1">{label}</div>
       <div className="text-accent-green font-bold">
-        {fee?.toLocaleString()} stroops
+        {fee != null ? formatStroops(fee) : "—"}
       </div>
     </div>
   );
@@ -102,11 +102,9 @@ export function FeeChart({
             <div className="text-xs text-text-secondary font-mono mt-1">
               {count.toLocaleString()} transactions
               <span className="text-text-muted"> · avg </span>
-              <span className="text-accent-cyan">{avg.toFixed(0)} str</span>
+              <span className="text-accent-cyan">{formatStroops(avg)}</span>
               <span className="text-text-muted"> · p95 </span>
-              <span className="text-accent-yellow">
-                {p95.toLocaleString()} str
-              </span>
+              <span className="text-accent-yellow">{formatStroops(p95)}</span>
             </div>
           )}
         </div>
@@ -175,6 +173,14 @@ export function FeeChart({
               axisLine={false}
               tickFormatter={(v) => `${v.toLocaleString()}`}
               width={70}
+              label={{
+                value: "stroops",
+                angle: -90,
+                position: "insideLeft",
+                fill: "#3d5a73",
+                fontSize: 10,
+                fontFamily: "JetBrains Mono",
+              }}
             />
             <Tooltip
               content={<CustomTooltip />}

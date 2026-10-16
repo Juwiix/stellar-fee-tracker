@@ -42,11 +42,3 @@ harness = false
 [[bench]]
 name = "spike_classifier"
 harness = false
-
-[[bench]]
-name = "sqlite_insert"
-harness = false
-
-[[bench]]
-name = "sqlite_query"
-harness = false

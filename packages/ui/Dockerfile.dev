@@ -1,9 +1,14 @@
+# Development-only image: runs the Next.js dev server with hot reload.
+# It is not suitable for production (no `next build`, no production start);
+# docker-compose.yml uses it for local work only.
 FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+# `npm ci` installs exactly what package-lock.json pins, so the image does not
+# drift from the lockfile the way `npm install` can.
+RUN npm ci
 
 COPY . .
 

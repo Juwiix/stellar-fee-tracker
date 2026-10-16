@@ -1,1 +1,0 @@
-pub fn store_alert_history() {\n    // Alert history store\n}\n

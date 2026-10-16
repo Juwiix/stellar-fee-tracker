@@ -1,1 +1,0 @@
-pub fn handle_convert() {\n    // Convert subcommand\n}\n

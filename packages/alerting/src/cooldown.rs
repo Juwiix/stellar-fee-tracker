@@ -1,1 +1,0 @@
-pub fn check_cooldown() {\n    // Evaluator cooldown\n}\n

@@ -1,1 +1,0 @@
-pub fn dispatch_alert() {\n    // Dispatcher logic\n}\n

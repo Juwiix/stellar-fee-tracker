@@ -1,1 +1,0 @@
-pub struct AlertRule {}\npub struct AlertEvent {}\n

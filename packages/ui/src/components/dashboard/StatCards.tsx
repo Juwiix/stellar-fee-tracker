@@ -49,11 +49,16 @@ function StatCard({
 export function StatCards({ current, trend }: Props) {
   const baseFee    = current ? formatStroops(current.base_fee)  : '—'
   const avgFee     = current ? formatStroops(current.avg_fee)   : '—'
-  const status     = trend?.status ?? 'Normal'
+  // A missing trend means /fees/trend failed, which is not the same as a
+  // healthy network: fall back to unknown values instead of 'Normal' and 0.
+  const hasTrend   = trend !== null
+  const status     = trend?.status ?? 'Unknown'
   const spikes     = trend?.recent_spike_count ?? 0
   const strength   = trend?.trend_strength ?? '—'
 
-  const TrendIcon = status === 'Rising' || status === 'Congested'
+  const TrendIcon = !hasTrend
+    ? Minus
+    : status === 'Rising' || status === 'Congested'
     ? TrendingUp
     : status === 'Declining'
     ? TrendingDown
@@ -76,16 +81,22 @@ export function StatCards({ current, trend }: Props) {
       />
       <StatCard
         label="Network Status"
-        value={status}
-        sub={<span className="text-text-muted">{strength} trend</span>}
+        value={hasTrend ? status : '—'}
+        sub={
+          hasTrend
+            ? <span className="text-text-muted">{strength} trend</span>
+            : <span className="text-text-muted">trend unavailable</span>
+        }
         icon={TrendIcon}
-        className={congestionBg(status)}
+        className={hasTrend ? congestionBg(status) : ''}
       />
       <StatCard
         label="Recent Spikes"
-        value={String(spikes)}
+        value={hasTrend ? String(spikes) : '—'}
         sub={
-          spikes > 0
+          !hasTrend
+            ? <span className="text-text-muted">trend unavailable</span>
+            : spikes > 0
             ? <span className="text-accent-yellow">fee anomalies detected</span>
             : <span className="text-accent-green">all clear</span>
         }

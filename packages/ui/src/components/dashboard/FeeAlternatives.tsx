@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import type { FeeAlternative } from '@/lib/types'
 import { formatStroops } from '@/lib/utils'
 
@@ -19,26 +20,61 @@ interface Props {
 }
 
 export function FeeAlternatives({ alternatives }: Props) {
+  // Outcome of the last copy attempt, or null. Drives both the visible
+  // confirmation next to the tier and the aria-live message below.
+  const [feedback, setFeedback] = useState<{ label: string; ok: boolean } | null>(
+    null,
+  )
+
+  // Clear the confirmation after a moment so it reads as transient feedback.
+  useEffect(() => {
+    if (!feedback) return
+    const id = window.setTimeout(() => setFeedback(null), 2_000)
+    return () => window.clearTimeout(id)
+  }, [feedback])
+
   if (!alternatives.length) return null
 
-  const handleCopy = (fee: string) => {
-    navigator.clipboard.writeText(fee).catch(() => {})
+  const handleCopy = (label: string, fee: string) => {
+    navigator.clipboard.writeText(fee).then(
+      () => setFeedback({ label, ok: true }),
+      () => setFeedback({ label, ok: false }),
+    )
   }
 
   return (
     <div>
       <p className="text-xs text-text-muted mb-2 font-medium">Alternatives</p>
-      <div className="grid grid-cols-3 gap-2">
-        {alternatives.map((alt, i) => {
+      {/* Copy result announced to screen readers. */}
+      <span role="status" aria-live="polite" className="sr-only">
+        {feedback
+          ? feedback.ok
+            ? `Copied the ${feedback.label} fee`
+            : `Could not copy the ${feedback.label} fee`
+          : ''}
+      </span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {alternatives.map((alt) => {
           const { border, label: labelColor } = tierStyle(alt.label)
           return (
             <button
-              key={i}
-              onClick={() => handleCopy(alt.fee)}
+              key={alt.label}
+              onClick={() => handleCopy(alt.label, alt.fee)}
               title="Click to copy fee"
               className={`rounded-lg border ${border} bg-bg-base px-2 py-2.5 text-left transition-colors hover:bg-bg-card`}
             >
-              <p className={`text-xs font-semibold capitalize ${labelColor}`}>{alt.label}</p>
+              <p className={`text-xs font-semibold capitalize ${labelColor}`}>
+                {alt.label}
+                {feedback?.label === alt.label && (
+                  <span
+                    className={
+                      feedback.ok ? 'text-accent-green ml-1' : 'text-red-400 ml-1'
+                    }
+                  >
+                    {feedback.ok ? '· copied' : '· copy failed'}
+                  </span>
+                )}
+              </p>
               <p className="text-sm font-bold text-text-base tabular-nums mt-1">
                 {formatStroops(Number(alt.fee))}
               </p>

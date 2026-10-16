@@ -115,6 +115,7 @@ export function FeeChart({
             <button
               key={w}
               onClick={() => onWindowChange(w)}
+              aria-pressed={window === w}
               className={cn(
                 "px-3 py-1 text-xs font-mono rounded border transition-colors",
                 window === w

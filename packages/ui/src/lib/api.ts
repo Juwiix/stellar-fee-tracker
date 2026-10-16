@@ -3,7 +3,6 @@ import type {
   FeeHistoryResponse,
   FeeTrendResponse,
   InsightsResponse,
-  HealthResponse,
   RecommendResponse,
   RecommendRequest,
 } from './types'
@@ -67,19 +66,22 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function getText(path: string): Promise<string> {
+  const res = await fetch(`${BASE}${path}`, {
+    next: { revalidate: 0 }, // always fresh
+  })
+  if (!res.ok) {
+    throw new Error(`API error ${res.status} on ${path}`)
+  }
+  return res.text()
+}
+
 export const api = {
   currentFees:  ()               => get<CurrentFeeResponse>('/fees/current'),
   feeHistory:   (window = '1h')  => get<FeeHistoryResponse>(`/fees/history?window=${window}`),
   feeTrend:     ()               => get<FeeTrendResponse>('/fees/trend'),
   insights:     ()               => get<InsightsResponse>('/insights'),
-  health:       ()               => get<HealthResponse>('/health'),
+  // /health returns the plain-text body "ok", not JSON.
+  health:       async ()         => (await getText('/health')).trim() === 'ok',
   recommend:    (body: RecommendRequest) => post<RecommendResponse>('/fees/recommend', body),
-}
-
-export async function fetchLatestFees(): Promise<CurrentFeeResponse> {
-  return get<CurrentFeeResponse>('/fees/latest')
-}
-
-export async function fetchFeeHistory(window: '1h' | '6h' | '24h' = '1h'): Promise<FeeHistoryResponse> {
-  return get<FeeHistoryResponse>(`/fees/history?window=${window}`)
 }

@@ -97,11 +97,6 @@ export interface InsightsResponse {
   congestion_trends?: unknown
   data_quality?:      unknown
 }
-// ---- /health ----
-export interface HealthResponse {
-  status: string
-}
-
 // ---- /fees/recommend ----
 export interface FeeAlternative {
   fee: string

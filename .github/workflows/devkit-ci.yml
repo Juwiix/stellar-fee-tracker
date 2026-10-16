@@ -30,7 +30,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          # Mirrors rust-toolchain.toml (#984).
+          toolchain: 1.99.1
       - name: Run Cargo Check
         run: cargo check -p stellar-devkit
       - name: Run Cargo Test

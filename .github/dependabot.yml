@@ -1,0 +1,23 @@
+version: 2
+
+updates:
+  # Rust workspace (root) — packages/core and packages/devkit.
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Next.js dashboard.
+  - package-ecosystem: npm
+    directory: "/packages/ui"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # actions/checkout, dtolnay/rust-toolchain, Swatinem/rust-cache, ...
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

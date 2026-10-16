@@ -19,6 +19,12 @@ function useCounter(target: number, duration = 1200) {
   }, []);
   useEffect(() => {
     if (!started) return;
+    // The count-up is decoration: with reduced motion requested, show the final
+    // value immediately instead of animating to it.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setVal(target);
+      return;
+    }
     let start: number;
     const step = (ts: number) => {
       if (!start) start = ts;

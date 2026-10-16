@@ -18,7 +18,10 @@ jobs:
         working-directory: packages/devkit
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          # Mirrors rust-toolchain.toml (#984).
+          toolchain: 1.99.1
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: packages/devkit

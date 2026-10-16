@@ -62,6 +62,10 @@ export function GridBeams() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    // The beams are pure decoration and the grid behind them is CSS, so when a
+    // visitor asks for reduced motion we never start the rAF loop at all.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
     let animId: number
     let beams: Beam[] = []
     let lastSpawn = 0
@@ -188,6 +192,7 @@ export function GridBeams() {
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       className="pointer-events-none fixed inset-0 z-[1]"
       style={{ opacity: 0.35 }}
     />

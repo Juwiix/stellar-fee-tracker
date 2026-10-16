@@ -41,6 +41,23 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+/* Reduced motion: the ping/pulse dots, the slide-up/fade-in entrances and the
+   smooth scrolling are decorative, so they are collapsed rather than merely
+   slowed down. GridBeams and the StatStrip counter check the same query in JS
+   because they drive animation from requestAnimationFrame, which CSS cannot
+   turn off. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html { scroll-behavior: auto; }
+}
+
 body {
   background-color: #080b0f;
   color: #e2eaf4;
